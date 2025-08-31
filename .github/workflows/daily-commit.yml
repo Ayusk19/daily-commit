@@ -2,8 +2,8 @@ name: Daily Commit
 
 on:
   schedule:
-    - cron: '0 0 * * *'   # Runs once per day at 00:00 UTC
-  workflow_dispatch:       # Allow manual run
+    - cron: '0 0,12 * * *'   # Runs at 00:00 UTC and 12:00 UTC (2 times a day)
+  workflow_dispatch:         # Allow manual run from Actions tab
 
 jobs:
   build:
@@ -20,4 +20,3 @@ jobs:
           git add log.txt
           git commit -m "chore: daily commit $(date)" || echo "No changes"
           git push
-
