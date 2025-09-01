@@ -1,34 +1,20 @@
-name: Daily Commit with Random Snippets
+- name: Fetch Random Snippet & Commit
+  run: |
+    mkdir -p snippets
+    FILE="snippets/snippet_$(date +%Y-%m-%d_%H-%M-%S).txt"
 
-on:
-  schedule:
-    - cron: '0 0,12 * * *'   # Runs twice a day
-  workflow_dispatch:         # Manual run support
+    # Try fetching a random quote (replace API with a stable one)
+    QUOTE=$(curl -s https://zenquotes.io/api/random | jq -r '.[0].q + " — " + .[0].a')
 
-jobs:
-  commit:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
+    # Fallback if API fails
+    if [ -z "$QUOTE" ]; then
+      QUOTE="console.log('Hello from GitHub Actions!');"
+    fi
 
-      - name: Fetch Random Snippet & Commit
-        run: |
-          mkdir -p snippets
-          FILE="snippets/snippet_$(date +%Y-%m-%d_%H-%M-%S).txt"
+    echo "$QUOTE" > $FILE
 
-          # Fetch a random programming quote (JSON API)
-          QUOTE=$(curl -s https://programming-quotes-api.herokuapp.com/quotes/random | jq -r '.en + " — " + .author')
-
-          # Fallback if API fails
-          if [ -z "$QUOTE" ]; then
-            QUOTE="console.log('Hello from GitHub Actions!');"
-          fi
-
-          echo "$QUOTE" > $FILE
-
-          git config --global user.name "GitHub Action"
-          git config --global user.email "actions@github.com"
-          git add snippets/
-          git commit -m "chore: add random snippet on $(date)" || echo "No changes"
-          git push
+    git config --global user.name "GitHub Action"
+    git config --global user.email "actions@github.com"
+    git add snippets
+    git commit -m "chore: add random snippet on $(date)" || echo "No changes"
+    git push
