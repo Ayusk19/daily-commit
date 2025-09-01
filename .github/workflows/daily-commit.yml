@@ -18,20 +18,29 @@ jobs:
           mkdir -p snippets
           FILE="snippets/snippet_$(date +%Y-%m-%d_%H-%M-%S).txt"
 
-          # Try to fetch a random programming quote from ZenQuotes API
-          QUOTE=$(curl -s https://zenquotes.io/api/random | jq -r '.[0].q + " — " + .[0].a')
+          # Try ZenQuotes API
+          RESPONSE=$(curl -s https://zenquotes.io/api/random || echo "")
 
-          # If API fails, pick a random fallback code snippet
-          if [ -z "$QUOTE" ]; then
-            SNIPPETS=(
-              "console.log('Hello from GitHub Actions!');"
-              "print('Hello from GitHub Actions!')"
-              "#include <iostream>\nint main(){ std::cout << \"Hello from GitHub Actions!\"; return 0; }"
-              "echo 'Hello from GitHub Actions!'"
-              "System.out.println('Hello from GitHub Actions!');"
-            )
-            INDEX=$((RANDOM % ${#SNIPPETS[@]}))
-            QUOTE="${SNIPPETS[$INDEX]}"
+          if echo "$RESPONSE" | jq -e . >/dev/null 2>&1; then
+            QUOTE=$(echo "$RESPONSE" | jq -r '.[0].q + " — " + .[0].a')
+          else
+            # Try Programming Quotes API as backup
+            RESPONSE=$(curl -s https://programming-quotesapi.vercel.app/api/random || echo "")
+
+            if echo "$RESPONSE" | jq -e . >/dev/null 2>&1; then
+              QUOTE=$(echo "$RESPONSE" | jq -r '.en + " — " + .author')
+            else
+              # Final fallback: random snippets
+              SNIPPETS=(
+                "console.log('Hello from GitHub Actions!');"
+                "print('Hello from GitHub Actions!')"
+                "#include <iostream>\nint main(){ std::cout << \"Hello from GitHub Actions!\"; return 0; }"
+                "echo 'Hello from GitHub Actions!'"
+                "System.out.println('Hello from GitHub Actions!');"
+              )
+              INDEX=$((RANDOM % ${#SNIPPETS[@]}))
+              QUOTE="${SNIPPETS[$INDEX]}"
+            fi
           fi
 
           echo -e "$QUOTE" > $FILE
